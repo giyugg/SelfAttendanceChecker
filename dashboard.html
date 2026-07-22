@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/dashboard/dashboard.css">
+</head>
+<body>
+
+<div class="frame">
+  <div class="board">
+    <header class="top">
+      <div>
+        <div class="headline">Today's Board</div>
+        <div class="subline">Attendance &amp; Schedule</div>
+      </div>
+      <div class="date-badge">
+        <span class="big" id="dateBig">Wednesday</span>
+        July 22 &middot; Period 3 of 6
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- schedule -->
+      <section>
+        <div class="panel-title"><span class="dot"></span>Today's Schedule</div>
+        <ul class="schedule-list" id="scheduleList"></ul>
+      </section>
+
+      <!-- stats -->
+      <section>
+        <div class="panel-title"><span class="dot" style="background:var(--chalk-mint)"></span>This Term</div>
+
+        <div class="rings-row" id="ringsRow"></div>
+
+        <div class="panel-title" style="font-size:20px;">Breakdown &mdash; last 30 days</div>
+        <div class="stack-bar" id="stackBar"></div>
+        <div class="legend" id="legend"></div>
+
+        <div class="streak-note">Currently <span class="num">12</span>-day present streak &mdash; keep it up!</div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="/dashboard/dashboard.js" defer></script>
+
+</body>
+</html>
