@@ -1,26 +1,159 @@
-// ---------- weekly bars ----------
-const week = [
-  { day:'M', status:'present', pct:100 },
-  { day:'T', status:'present', pct:100 },
-  { day:'W', status:'late', pct:70 },
-  { day:'T', status:'present', pct:100 },
-  { day:'F', status:'absent', pct:20 },
-  { day:'S', status:'none', pct:0 },
-  { day:'S', status:'none', pct:0 },
-];
+// ================= STORAGE-BACKED ATTENDANCE DATA =================
+const STORAGE_KEY = 'attendance-records';
+const STATUS_CYCLE = [null, 'present', 'late', 'absent'];
 const statusColor = { present:'var(--mint)', late:'var(--amber)', absent:'var(--coral)', none:'transparent' };
-const barsEl = document.getElementById('bars');
-week.forEach(d=>{
-  const col = document.createElement('div');
-  col.className = 'bar-col';
-  col.innerHTML = `
-    <div class="bar-track">
-      <div class="bar-fill" style="height:${d.pct}%; background:${statusColor[d.status]}"></div>
-    </div>
-    <div class="bar-day">${d.day}</div>
-  `;
-  barsEl.appendChild(col);
+
+const hasStorage = (typeof window !== 'undefined' && !!window.storage);
+let records = {}; // { "YYYY-MM-DD": "present" | "late" | "absent" }
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function dateKey(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+
+async function loadRecords(){
+  if(!hasStorage) return {};
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    return res && res.value ? JSON.parse(res.value) : {};
+  }catch(e){
+    return {}; // key not found yet, or read error — start fresh
+  }
+}
+
+async function saveRecords(){
+  if(!hasStorage) return;
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(records), false);
+  }catch(e){
+    console.error('Could not save attendance data', e);
+  }
+}
+
+// ================= CALENDAR STATE =================
+const realToday = new Date();
+let viewYear = realToday.getFullYear();
+let viewMonth = realToday.getMonth();
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCalendar(){
+  document.getElementById('calMonthLabel').textContent = monthNames[viewMonth] + ' ' + viewYear;
+  const calGrid = document.getElementById('calGrid');
+  calGrid.innerHTML = '';
+  ['S','M','T','W','T','F','S'].forEach(d=>{
+    const el = document.createElement('div');
+    el.className = 'dow';
+    el.textContent = d;
+    calGrid.appendChild(el);
+  });
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  for(let i=0;i<firstDay;i++){
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    calGrid.appendChild(el);
+  }
+
+  for(let d=1; d<=daysInMonth; d++){
+    const key = dateKey(viewYear, viewMonth, d);
+    const isToday = viewYear === realToday.getFullYear() && viewMonth === realToday.getMonth() && d === realToday.getDate();
+    const status = records[key];
+    const el = document.createElement('div');
+    el.className = 'cal-day' + (isToday ? ' today' : '') + (status ? ` st-${status}` : '');
+    el.innerHTML = `${d}${status ? `<span class="dot" style="background:${statusColor[status]}"></span>` : ''}`;
+    el.addEventListener('click', ()=> cycleStatus(key));
+    calGrid.appendChild(el);
+  }
+}
+
+async function cycleStatus(key){
+  const current = records[key] || null;
+  const idx = STATUS_CYCLE.indexOf(current);
+  const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+  if(next === null){ delete records[key]; } else { records[key] = next; }
+  await saveRecords();
+  renderAll();
+}
+
+// ================= STATS =================
+function computeStats(){
+  let present=0, late=0, absent=0;
+  Object.values(records).forEach(s=>{
+    if(s==='present') present++;
+    else if(s==='late') late++;
+    else if(s==='absent') absent++;
+  });
+  const total = present + late + absent;
+  const rate = total > 0 ? Math.round((present/total)*100) : 0;
+  return { present, late, absent, total, rate };
+}
+
+function renderStats(){
+  const { present, late, absent, rate } = computeStats();
+  document.getElementById('statPresent').textContent = present;
+  document.getElementById('statLate').textContent = late;
+  document.getElementById('statAbsent').textContent = absent;
+  document.getElementById('statRate').textContent = rate + '%';
+
+  const circle = document.getElementById('donutProgress');
+  const circumference = 2 * Math.PI * 56;
+  const offset = circumference - (rate/100) * circumference;
+  circle.style.strokeDashoffset = offset;
+  document.getElementById('donutPct').textContent = rate + '%';
+}
+
+// ================= WEEKLY BARS (Sun–Sat containing real today) =================
+function renderWeekBars(){
+  const barsEl = document.getElementById('bars');
+  barsEl.innerHTML = '';
+  const dayLabels = ['S','M','T','W','T','F','S'];
+  const startOfWeek = new Date(realToday);
+  startOfWeek.setDate(realToday.getDate() - realToday.getDay());
+
+  for(let i=0;i<7;i++){
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const key = dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+    const status = records[key];
+    const pct = status ? (status === 'present' ? 100 : status === 'late' ? 65 : 25) : 0;
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    col.innerHTML = `
+      <div class="bar-track">
+        <div class="bar-fill" style="height:${pct}%; background:${status ? statusColor[status] : 'transparent'}"></div>
+      </div>
+      <div class="bar-day">${dayLabels[i]}</div>
+    `;
+    barsEl.appendChild(col);
+  }
+}
+
+function renderAll(){
+  renderCalendar();
+  renderStats();
+  renderWeekBars();
+}
+
+document.getElementById('calPrev').addEventListener('click', ()=>{
+  viewMonth--;
+  if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+  renderCalendar();
 });
+document.getElementById('calNext').addEventListener('click', ()=>{
+  viewMonth++;
+  if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+  renderCalendar();
+});
+document.getElementById('calClear').addEventListener('click', async ()=>{
+  records = {};
+  await saveRecords();
+  renderAll();
+});
+
+(async function init(){
+  records = await loadRecords();
+  renderAll();
+})();
 
 // ---------- schedule ----------
 const schedule = [
@@ -48,44 +181,3 @@ schedule.forEach(s=>{
   `;
   listEl.appendChild(row);
 });
-
-// ---------- calendar ----------
-const today = new Date();
-const year = today.getFullYear();
-const month = today.getMonth();
-const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-document.getElementById('calMonthLabel').textContent = monthNames[month] + ' ' + year;
-
-const firstDay = new Date(year, month, 1).getDay();
-const daysInMonth = new Date(year, month + 1, 0).getDate();
-const calGrid = document.getElementById('calGrid');
-
-['S','M','T','W','T','F','S'].forEach(d=>{
-  const el = document.createElement('div');
-  el.className = 'dow';
-  el.textContent = d;
-  calGrid.appendChild(el);
-});
-
-// sample statuses for a few past days (deterministic pseudo-pattern)
-const sampleStatus = (d)=>{
-  if(d > today.getDate()) return null;
-  const m = d % 9;
-  if(m === 0) return 'absent';
-  if(m === 4) return 'late';
-  return 'present';
-};
-const statusDot = { present:'var(--mint)', late:'var(--amber)', absent:'var(--coral)' };
-
-for(let i=0;i<firstDay;i++){
-  const el = document.createElement('div');
-  calGrid.appendChild(el);
-}
-for(let d=1; d<=daysInMonth; d++){
-  const el = document.createElement('div');
-  const isToday = d === today.getDate();
-  el.className = 'cal-day' + (isToday ? ' today' : (d>today.getDate() ? ' muted' : ''));
-  const st = sampleStatus(d);
-  el.innerHTML = `${d}${st ? `<span class="dot" style="background:${statusDot[st]}"></span>` : ''}`;
-  calGrid.appendChild(el);
-}

@@ -91,8 +91,8 @@
       <div class="user-chip">
         <div class="avatar">RS</div>
         <div>
-          <div class="name">Kyle Acuña</div>
-          <div class="email">kyleacuna@bulsu.edu.ph</div>
+          <div class="name">Rina Santos</div>
+          <div class="email">rina.s@school.edu</div>
         </div>
       </div>
     </div>
@@ -121,32 +121,32 @@
           <span class="label">Days Present</span>
           <div class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></div>
         </div>
-        <div class="value">87</div>
-        <div class="foot"><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 15l6-6 6 6"/></svg></span> This term</div>
+        <div class="value" id="statPresent">0</div>
+        <div class="foot"><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 15l6-6 6 6"/></svg></span> All time</div>
       </div>
       <div class="card stat-card">
         <div class="stat-top">
           <span class="label">Days Late</span>
           <div class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></div>
         </div>
-        <div class="value">8</div>
-        <div class="foot"><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 15l6-6 6 6"/></svg></span> This term</div>
+        <div class="value" id="statLate">0</div>
+        <div class="foot"><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 15l6-6 6 6"/></svg></span> All time</div>
       </div>
       <div class="card stat-card">
         <div class="stat-top">
           <span class="label">Days Absent</span>
           <div class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></div>
         </div>
-        <div class="value">5</div>
-        <div class="foot">2 excused</div>
+        <div class="value" id="statAbsent">0</div>
+        <div class="foot" id="statAbsentFoot">Marked from calendar</div>
       </div>
       <div class="card stat-card">
         <div class="stat-top">
           <span class="label">Attendance Rate</span>
           <div class="circ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></div>
         </div>
-        <div class="value">87%</div>
-        <div class="foot">On Discuss</div>
+        <div class="value" id="statRate">0%</div>
+        <div class="foot">Present &divide; total marked days</div>
       </div>
     </div>
 
@@ -170,8 +170,8 @@
             <div class="card-sub">Tap-free preview</div>
           </div>
           <div class="cal-nav">
-            <button disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-            <button disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button id="calPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <button id="calNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
           </div>
         </div>
         <div class="cal-grid" id="calGrid"></div>
@@ -179,7 +179,9 @@
           <span><i style="background:var(--mint)"></i>Present</span>
           <span><i style="background:var(--amber)"></i>Late</span>
           <span><i style="background:var(--coral)"></i>Absent</span>
+          <button class="cal-clear" id="calClear">Clear all data</button>
         </div>
+        <div class="cal-hint">Click a day to cycle: Present &rarr; Late &rarr; Absent &rarr; Clear</div>
       </div>
     </div>
 
@@ -205,10 +207,10 @@
         <div class="donut-wrap">
           <svg viewBox="0 0 140 140" width="150" height="150">
             <circle cx="70" cy="70" r="56" fill="none" stroke="#F1F3F2" stroke-width="16"/>
-            <circle cx="70" cy="70" r="56" fill="none" stroke="var(--mint)" stroke-width="16"
-              stroke-linecap="round" stroke-dasharray="351.9" stroke-dashoffset="90"
+            <circle id="donutProgress" cx="70" cy="70" r="56" fill="none" stroke="var(--mint)" stroke-width="16"
+              stroke-linecap="round" stroke-dasharray="351.9" stroke-dashoffset="351.9"
               transform="rotate(-90 70 70)"/>
-            <text x="70" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="var(--ink)" font-family="Inter">87%</text>
+            <text id="donutPct" x="70" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="var(--ink)" font-family="Inter">0%</text>
             <text x="70" y="86" text-anchor="middle" font-size="11" fill="var(--muted-2)" font-family="Inter">Present</text>
           </svg>
           <div class="donut-legend">
