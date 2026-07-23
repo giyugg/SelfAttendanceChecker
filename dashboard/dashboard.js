@@ -1,9 +1,28 @@
-const COLORS = {
-  present: getComputedStyle(document.documentElement).getPropertyValue('--chalk-mint').trim(),
-  late: getComputedStyle(document.documentElement).getPropertyValue('--chalk-yellow').trim(),
-  absent: getComputedStyle(document.documentElement).getPropertyValue('--chalk-coral').trim(),
-};
+// ---------- weekly bars ----------
+const week = [
+  { day:'M', status:'present', pct:100 },
+  { day:'T', status:'present', pct:100 },
+  { day:'W', status:'late', pct:70 },
+  { day:'T', status:'present', pct:100 },
+  { day:'F', status:'absent', pct:20 },
+  { day:'S', status:'none', pct:0 },
+  { day:'S', status:'none', pct:0 },
+];
+const statusColor = { present:'var(--mint)', late:'var(--amber)', absent:'var(--coral)', none:'transparent' };
+const barsEl = document.getElementById('bars');
+week.forEach(d=>{
+  const col = document.createElement('div');
+  col.className = 'bar-col';
+  col.innerHTML = `
+    <div class="bar-track">
+      <div class="bar-fill" style="height:${d.pct}%; background:${statusColor[d.status]}"></div>
+    </div>
+    <div class="bar-day">${d.day}</div>
+  `;
+  barsEl.appendChild(col);
+});
 
+// ---------- schedule ----------
 const schedule = [
   { time:'7:30', subject:'Homeroom', room:'Rm 204', status:'done' },
   { time:'8:00', subject:'Algebra II', room:'Rm 118', status:'done' },
@@ -12,69 +31,61 @@ const schedule = [
   { time:'12:45', subject:'English Lit', room:'Rm 112', status:'upcoming' },
   { time:'2:00', subject:'Study Hall', room:'Library', status:'upcoming' },
 ];
-
-const listEl = document.getElementById('scheduleList');
-schedule.forEach((s) => {
-  const li = document.createElement('li');
-  li.className = 'schedule-item';
-  const label = s.status === 'now' ? 'In progress' : s.status === 'done' ? 'Completed' : 'Upcoming';
-  li.innerHTML = `
-    <div class="schedule-time">${s.time}</div>
-    <div class="schedule-info">
-      <div class="subject">${s.subject}</div>
+const dotColor = { done:'var(--mint)', now:'var(--green)', upcoming:'var(--border)' };
+const statusLabel = { done:'Done', now:'Now', upcoming:'Upcoming' };
+const listEl = document.getElementById('schedList');
+schedule.forEach(s=>{
+  const row = document.createElement('div');
+  row.className = 'sched-item';
+  row.innerHTML = `
+    <div class="sched-time">${s.time}</div>
+    <span class="sched-dot" style="background:${dotColor[s.status]}"></span>
+    <div class="sched-info">
+      <div class="subj">${s.subject}</div>
       <div class="room">${s.room}</div>
     </div>
-    <div class="status-pill ${s.status}">${label}</div>
+    <div class="sched-status ${s.status}">${statusLabel[s.status]}</div>
   `;
-  listEl.appendChild(li);
+  listEl.appendChild(row);
 });
 
-const stats = [
-  { label:'Present', value:87, color:COLORS.present },
-  { label:'Late', value:8, color:COLORS.late },
-  { label:'Absent', value:5, color:COLORS.absent },
-];
+// ---------- calendar ----------
+const today = new Date();
+const year = today.getFullYear();
+const month = today.getMonth();
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+document.getElementById('calMonthLabel').textContent = monthNames[month] + ' ' + year;
 
-const ringsRow = document.getElementById('ringsRow');
-stats.forEach((st) => {
-  const radius = 38;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (st.value / 100) * circumference;
-  const card = document.createElement('div');
-  card.className = 'ring-card';
-  card.innerHTML = `
-    <svg viewBox="0 0 96 96">
-      <circle cx="48" cy="48" r="${radius}" fill="none" stroke="rgba(238,234,219,0.12)" stroke-width="8"/>
-      <circle class="ring-progress" cx="48" cy="48" r="${radius}" fill="none" stroke="${st.color}"
-        stroke-width="8" stroke-linecap="round"
-        stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"
-        transform="rotate(-90 48 48)"/>
-      <text x="48" y="54" text-anchor="middle" font-family="JetBrains Mono, monospace"
-        font-size="20" fill="${st.color}" font-weight="600">${st.value}%</text>
-    </svg>
-    <div class="ring-label">${st.label}</div>
-  `;
-  ringsRow.appendChild(card);
-  requestAnimationFrame(() => {
-    const circle = card.querySelector('.ring-progress');
-    setTimeout(() => {
-      circle.setAttribute('stroke-dashoffset', offset);
-    }, 80);
-  });
+const firstDay = new Date(year, month, 1).getDay();
+const daysInMonth = new Date(year, month + 1, 0).getDate();
+const calGrid = document.getElementById('calGrid');
+
+['S','M','T','W','T','F','S'].forEach(d=>{
+  const el = document.createElement('div');
+  el.className = 'dow';
+  el.textContent = d;
+  calGrid.appendChild(el);
 });
 
-const stackBar = document.getElementById('stackBar');
-stats.forEach((st) => {
-  const seg = document.createElement('div');
-  seg.className = 'stack-seg';
-  seg.style.width = `${st.value}%`;
-  seg.style.background = st.color;
-  stackBar.appendChild(seg);
-});
+// sample statuses for a few past days (deterministic pseudo-pattern)
+const sampleStatus = (d)=>{
+  if(d > today.getDate()) return null;
+  const m = d % 9;
+  if(m === 0) return 'absent';
+  if(m === 4) return 'late';
+  return 'present';
+};
+const statusDot = { present:'var(--mint)', late:'var(--amber)', absent:'var(--coral)' };
 
-const legend = document.getElementById('legend');
-stats.forEach((st) => {
-  const item = document.createElement('span');
-  item.innerHTML = `<i style="background:${st.color}"></i>${st.label} &middot; ${st.value}%`;
-  legend.appendChild(item);
-});
+for(let i=0;i<firstDay;i++){
+  const el = document.createElement('div');
+  calGrid.appendChild(el);
+}
+for(let d=1; d<=daysInMonth; d++){
+  const el = document.createElement('div');
+  const isToday = d === today.getDate();
+  el.className = 'cal-day' + (isToday ? ' today' : (d>today.getDate() ? ' muted' : ''));
+  const st = sampleStatus(d);
+  el.innerHTML = `${d}${st ? `<span class="dot" style="background:${statusDot[st]}"></span>` : ''}`;
+  calGrid.appendChild(el);
+}
